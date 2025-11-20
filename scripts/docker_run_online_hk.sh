@@ -101,9 +101,10 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 fi
 
-# 创建日志目录
-HOST_LOG_DIR="/opt/logs"
-mkdir -p "${HOST_LOG_DIR}/server_operator"
+# 创建线上环境日志目录（固定路径）
+HOST_LOG_DIR="${HOME}/logs/server_operator_online"
+mkdir -p "${HOST_LOG_DIR}"
+chmod -R 777 "${HOST_LOG_DIR}" 2>/dev/null || true
 
 echo "[3/3] 以线上配置运行容器（带端口映射功能）"
 docker run -d \
@@ -121,6 +122,6 @@ docker run -d \
 
 echo "✅ 启动完成。"
 echo "- gRPC: localhost:${HOST_GRPC_PORT}"
-echo "- 日志目录: ${HOST_LOG_DIR}/server_operator"
+echo "- 日志目录: ${HOST_LOG_DIR}"
 echo "- 端口映射: 已启用（通过nsenter执行宿主机nftables）"
 

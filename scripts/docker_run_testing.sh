@@ -101,9 +101,10 @@ if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 fi
 
-# 创建用户主目录下的日志目录
-HOST_LOG_DIR="${HOME}/logs"
-mkdir -p "${HOST_LOG_DIR}/server_operator"
+# 创建测试环境日志目录（固定路径）
+HOST_LOG_DIR="${HOME}/logs/server_operator_test"
+mkdir -p "${HOST_LOG_DIR}"
+chmod -R 777 "${HOST_LOG_DIR}" 2>/dev/null || true
 
 echo "[3/3] 以本地配置运行容器（带端口映射功能）"
 # 注意：测试环境也部署在线上，使用online-hk_mdcp-network网络，并通过端口暴露供外部访问
