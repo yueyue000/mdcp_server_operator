@@ -6,12 +6,10 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-
-	"github.com/wumitech-com/mdcp_common/logger"
 )
 
 const (
-	defaultADBTimeout = 3  // 默认ADB超时时间（秒）
+	defaultADBTimeout = 3    // 默认ADB超时时间（秒）
 	adbPort           = 5555 // ADB连接端口
 )
 
@@ -155,4 +153,3 @@ func ExecutePhoneCommand(ipAddress, command string, timeout int32) (string, stri
 
 	return string(output), "", exitCode, nil
 }
-

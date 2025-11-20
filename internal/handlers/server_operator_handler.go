@@ -13,7 +13,7 @@ import (
 // ServerOperatorHandler 服务器操作处理器
 type ServerOperatorHandler struct {
 	server_operator.UnimplementedServerOperatorServiceServer
-	cfg                *config.Config
+	cfg                 *config.Config
 	portMappingExecutor *ubuntu.PortMappingExecutor
 }
 
@@ -27,24 +27,25 @@ func NewServerOperatorHandler(cfg *config.Config) *ServerOperatorHandler {
 	)
 
 	return &ServerOperatorHandler{
-		cfg:                cfg,
+		cfg:                 cfg,
 		portMappingExecutor: portMappingExecutor,
 	}
 }
 
 // EnablePortMapping 启用端口映射
 func (h *ServerOperatorHandler) EnablePortMapping(ctx context.Context, req *server_operator.EnablePortMappingRequest) (*server_operator.EnablePortMappingResponse, error) {
-	logger.InfoF("启用端口映射: %s:%d", req.InternalIp, req.MappedPort)
+	logger.InfoFWithContext(ctx, "启用端口映射: %s:%d", req.InternalIp, req.MappedPort)
 
-	err := h.portMappingExecutor.EnablePortMapping(req.InternalIp, req.MappedPort)
+	err := h.portMappingExecutor.EnablePortMapping(ctx, req.InternalIp, req.MappedPort)
 	if err != nil {
-		logger.ErrorF("启用端口映射失败: %v", err)
+		logger.ErrorFWithContext(ctx, "启用端口映射失败: %v", err)
 		return &server_operator.EnablePortMappingResponse{
 			Success: false,
 			Message: "启用端口映射失败: " + err.Error(),
 		}, nil
 	}
 
+	logger.InfoFWithContext(ctx, "端口映射启用成功: %s:%d", req.InternalIp, req.MappedPort)
 	return &server_operator.EnablePortMappingResponse{
 		Success: true,
 		Message: "端口映射已启用",
@@ -53,17 +54,18 @@ func (h *ServerOperatorHandler) EnablePortMapping(ctx context.Context, req *serv
 
 // DisablePortMapping 禁用端口映射
 func (h *ServerOperatorHandler) DisablePortMapping(ctx context.Context, req *server_operator.DisablePortMappingRequest) (*server_operator.DisablePortMappingResponse, error) {
-	logger.InfoF("禁用端口映射: %d", req.MappedPort)
+	logger.InfoFWithContext(ctx, "禁用端口映射: %d", req.MappedPort)
 
-	err := h.portMappingExecutor.DisablePortMapping(req.MappedPort)
+	err := h.portMappingExecutor.DisablePortMapping(ctx, req.MappedPort)
 	if err != nil {
-		logger.ErrorF("禁用端口映射失败: %v", err)
+		logger.ErrorFWithContext(ctx, "禁用端口映射失败: %v", err)
 		return &server_operator.DisablePortMappingResponse{
 			Success: false,
 			Message: "禁用端口映射失败: " + err.Error(),
 		}, nil
 	}
 
+	logger.InfoFWithContext(ctx, "端口映射禁用成功: %d", req.MappedPort)
 	return &server_operator.DisablePortMappingResponse{
 		Success: true,
 		Message: "端口映射已禁用",
@@ -72,11 +74,11 @@ func (h *ServerOperatorHandler) DisablePortMapping(ctx context.Context, req *ser
 
 // ListPortMappings 列出所有端口映射
 func (h *ServerOperatorHandler) ListPortMappings(ctx context.Context, req *server_operator.ListPortMappingsRequest) (*server_operator.ListPortMappingsResponse, error) {
-	logger.InfoF("列出端口映射")
+	logger.InfoFWithContext(ctx, "列出端口映射")
 
-	output, err := h.portMappingExecutor.ListPortMappings()
+	output, err := h.portMappingExecutor.ListPortMappings(ctx)
 	if err != nil {
-		logger.ErrorF("列出端口映射失败: %v", err)
+		logger.ErrorFWithContext(ctx, "列出端口映射失败: %v", err)
 		return &server_operator.ListPortMappingsResponse{
 			Success: false,
 			Message: "列出端口映射失败: " + err.Error(),
@@ -93,7 +95,7 @@ func (h *ServerOperatorHandler) ListPortMappings(ctx context.Context, req *serve
 
 // ExecutePhonePing 执行云手机Ping
 func (h *ServerOperatorHandler) ExecutePhonePing(ctx context.Context, req *server_operator.ExecutePhonePingRequest) (*server_operator.ExecutePhonePingResponse, error) {
-	logger.InfoF("执行云手机Ping: %s", req.IpAddress)
+	logger.InfoFWithContext(ctx, "执行云手机Ping: %s", req.IpAddress)
 
 	timeout := req.Timeout
 	if timeout <= 0 {
@@ -106,12 +108,18 @@ func (h *ServerOperatorHandler) ExecutePhonePing(ctx context.Context, req *serve
 
 	success, latency, err := phone.ExecutePing(req.IpAddress, timeout, count)
 	if err != nil {
-		logger.ErrorF("执行Ping失败: %v", err)
+		logger.ErrorFWithContext(ctx, "执行Ping失败: IP=%s, 错误=%v", req.IpAddress, err)
 		return &server_operator.ExecutePhonePingResponse{
 			Success: false,
 			Message: "执行Ping失败: " + err.Error(),
 			Timeout: err.Error() == "ping超时",
 		}, nil
+	}
+
+	if success {
+		logger.InfoFWithContext(ctx, "Ping成功: IP=%s, 延迟=%.2fms", req.IpAddress, latency)
+	} else {
+		logger.WarnFWithContext(ctx, "Ping失败: IP=%s", req.IpAddress)
 	}
 
 	return &server_operator.ExecutePhonePingResponse{
@@ -124,7 +132,7 @@ func (h *ServerOperatorHandler) ExecutePhonePing(ctx context.Context, req *serve
 
 // GetPhoneSerialNumber 获取云手机SN码
 func (h *ServerOperatorHandler) GetPhoneSerialNumber(ctx context.Context, req *server_operator.GetPhoneSerialNumberRequest) (*server_operator.GetPhoneSerialNumberResponse, error) {
-	logger.InfoF("获取云手机SN码: %s", req.IpAddress)
+	logger.InfoFWithContext(ctx, "获取云手机SN码: IP=%s", req.IpAddress)
 
 	timeout := req.Timeout
 	if timeout <= 0 {
@@ -133,7 +141,7 @@ func (h *ServerOperatorHandler) GetPhoneSerialNumber(ctx context.Context, req *s
 
 	sn, err := phone.GetSerialNumberViaADB(req.IpAddress, timeout)
 	if err != nil {
-		logger.ErrorF("获取SN码失败: %v", err)
+		logger.ErrorFWithContext(ctx, "获取SN码失败: IP=%s, 错误=%v", req.IpAddress, err)
 		return &server_operator.GetPhoneSerialNumberResponse{
 			Success:      false,
 			Message:      "获取SN码失败: " + err.Error(),
@@ -141,6 +149,7 @@ func (h *ServerOperatorHandler) GetPhoneSerialNumber(ctx context.Context, req *s
 		}, nil
 	}
 
+	logger.InfoFWithContext(ctx, "获取SN码成功: IP=%s, SN=%s", req.IpAddress, sn)
 	return &server_operator.GetPhoneSerialNumberResponse{
 		Success:      true,
 		Message:      "获取SN码成功",
@@ -150,7 +159,7 @@ func (h *ServerOperatorHandler) GetPhoneSerialNumber(ctx context.Context, req *s
 
 // GetPhoneMACAddress 获取云手机MAC地址
 func (h *ServerOperatorHandler) GetPhoneMACAddress(ctx context.Context, req *server_operator.GetPhoneMACAddressRequest) (*server_operator.GetPhoneMACAddressResponse, error) {
-	logger.InfoF("获取云手机MAC地址: %s", req.IpAddress)
+	logger.InfoFWithContext(ctx, "获取云手机MAC地址: IP=%s", req.IpAddress)
 
 	timeout := req.Timeout
 	if timeout <= 0 {
@@ -159,7 +168,7 @@ func (h *ServerOperatorHandler) GetPhoneMACAddress(ctx context.Context, req *ser
 
 	mac, err := phone.GetMACAddressViaADB(req.IpAddress, timeout)
 	if err != nil {
-		logger.ErrorF("获取MAC地址失败: %v", err)
+		logger.ErrorFWithContext(ctx, "获取MAC地址失败: IP=%s, 错误=%v", req.IpAddress, err)
 		return &server_operator.GetPhoneMACAddressResponse{
 			Success:    false,
 			Message:    "获取MAC地址失败: " + err.Error(),
@@ -167,6 +176,7 @@ func (h *ServerOperatorHandler) GetPhoneMACAddress(ctx context.Context, req *ser
 		}, nil
 	}
 
+	logger.InfoFWithContext(ctx, "获取MAC地址成功: IP=%s, MAC=%s", req.IpAddress, mac)
 	return &server_operator.GetPhoneMACAddressResponse{
 		Success:    true,
 		Message:    "获取MAC地址成功",
@@ -176,7 +186,7 @@ func (h *ServerOperatorHandler) GetPhoneMACAddress(ctx context.Context, req *ser
 
 // ExecutePhoneCommand 执行云手机命令
 func (h *ServerOperatorHandler) ExecutePhoneCommand(ctx context.Context, req *server_operator.ExecutePhoneCommandRequest) (*server_operator.ExecutePhoneCommandResponse, error) {
-	logger.InfoF("执行云手机命令: %s, 命令: %s", req.IpAddress, req.Command)
+	logger.InfoFWithContext(ctx, "执行云手机命令: IP=%s, 命令=%s", req.IpAddress, req.Command)
 
 	timeout := req.Timeout
 	if timeout <= 0 {
@@ -185,7 +195,7 @@ func (h *ServerOperatorHandler) ExecutePhoneCommand(ctx context.Context, req *se
 
 	stdout, stderr, exitCode, err := phone.ExecutePhoneCommand(req.IpAddress, req.Command, timeout)
 	if err != nil {
-		logger.ErrorF("执行命令失败: %v", err)
+		logger.ErrorFWithContext(ctx, "执行命令失败: IP=%s, 命令=%s, 错误=%v, ExitCode=%d", req.IpAddress, req.Command, err, exitCode)
 		return &server_operator.ExecutePhoneCommandResponse{
 			Success:  false,
 			Message:  "执行命令失败: " + err.Error(),
@@ -193,6 +203,12 @@ func (h *ServerOperatorHandler) ExecutePhoneCommand(ctx context.Context, req *se
 			Stderr:   stderr,
 			ExitCode: exitCode,
 		}, nil
+	}
+
+	if exitCode != 0 {
+		logger.WarnFWithContext(ctx, "命令执行完成但退出码非0: IP=%s, 命令=%s, ExitCode=%d, Stderr=%s", req.IpAddress, req.Command, exitCode, stderr)
+	} else {
+		logger.InfoFWithContext(ctx, "命令执行成功: IP=%s, 命令=%s, ExitCode=%d", req.IpAddress, req.Command, exitCode)
 	}
 
 	return &server_operator.ExecutePhoneCommandResponse{
@@ -203,4 +219,3 @@ func (h *ServerOperatorHandler) ExecutePhoneCommand(ctx context.Context, req *se
 		ExitCode: exitCode,
 	}, nil
 }
-

@@ -9,6 +9,7 @@ import (
 	"github.com/wumitech-com/mdcp_proto/api/server_operator"
 	"github.com/wumitech-com/mdcp_server_operator/internal/config"
 	"github.com/wumitech-com/mdcp_server_operator/internal/handlers"
+	"github.com/wumitech-com/mdcp_server_operator/internal/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 )
@@ -33,6 +34,10 @@ func RunGRPCServer(ctx context.Context, cfg *config.Config) error {
 	}
 
 	opts := []grpc.ServerOption{
+		grpc.UnaryInterceptor(middleware.ChainUnaryServer(
+			middleware.RecoveryInterceptor,
+			middleware.TraceInterceptor,
+		)),
 		grpc.MaxRecvMsgSize(cfg.Server.GRPC.MaxReceiveMessageSize),
 		grpc.MaxSendMsgSize(cfg.Server.GRPC.MaxSendMessageSize),
 		grpc.KeepaliveParams(keepaliveParams),
@@ -74,4 +79,3 @@ func RunGRPCServer(ctx context.Context, cfg *config.Config) error {
 
 	return nil
 }
-
