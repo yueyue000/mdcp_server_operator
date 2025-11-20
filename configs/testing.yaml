@@ -1,0 +1,33 @@
+server:
+  grpc:
+    host: "0.0.0.0"
+    port: 50054
+    max_receive_message_size: 4194304  # 4MB
+    max_send_message_size: 4194304     # 4MB
+    keepalive:
+      time: 10                         # 10秒
+      timeout: 3                       # 3秒
+      permit_without_stream: true
+
+logging:
+  level: "debug"
+  directory: "logs/server_operator"
+  prefix: "server_operator"
+  max_size: 100
+  max_backups: 30
+  max_age: 30
+
+# Ubuntu服务器配置
+ubuntu:
+  external_ip: "206.119.108.2"
+  target_port: "5555"
+  table_name: "ip nat"
+  chain_name: "PHONE_PORT_MAPPING"
+
+# 云手机操作配置
+phone:
+  adb_port: 5555
+  ping_timeout: 3
+  adb_timeout: 3
+  latency_threshold: 200.0
+

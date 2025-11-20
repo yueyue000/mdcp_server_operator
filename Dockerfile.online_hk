@@ -1,0 +1,71 @@
+## Multi-stage build for mdcp_server_operator - 线上环境
+
+## ===================== Stage 1: Build =====================
+FROM golang:1.24.4 AS builder
+
+WORKDIR /app
+
+# 预拷贝 go.mod/go.sum（构建上下文需为工作区根目录）
+COPY mdcp_server_operator/go.mod mdcp_server_operator/go.sum ./
+
+# 清理代理配置，设置国内镜像加速
+ENV http_proxy= https_proxy= HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= NO_PROXY= no_proxy= \
+    GIT_PROXY_COMMAND= GIT_SSH_COMMAND= GIT_SSL_NO_VERIFY=false \
+    GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.org \
+    GOPATH=/go GOMODCACHE=/go/pkg/mod
+
+RUN git config --system --unset-all http.proxy || true \
+ && git config --system --unset-all https.proxy || true \
+ && git config --global --unset-all http.proxy || true \
+ && git config --global --unset-all https.proxy || true \
+ && git config --global http.proxy "" \
+ && git config --global https.proxy "" \
+ && go env -w GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.org GOPATH=/go GOMODCACHE=/go/pkg/mod \
+ && true
+
+# 拷贝本地依赖
+COPY mdcp_common /mdcp_common
+COPY mdcp_proto /mdcp_proto
+
+# 复制 mdcp_server_operator 源码
+COPY mdcp_server_operator/ /app/
+
+# 下载依赖（会使用 go.mod 中的 replace 指向本地路径）
+RUN go mod download
+
+# 编译：根据构建平台自动选择架构
+ARG TARGETARCH
+RUN echo "🔨 编译目标架构: ${TARGETARCH:-amd64}" \
+ && CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH:-amd64} \
+    go build -trimpath -ldflags "-s -w" \
+    -o /app/bin/server ./cmd/server
+
+## ===================== Stage 2: Runtime =====================
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+ENV http_proxy= https_proxy= HTTP_PROXY= HTTPS_PROXY= ALL_PROXY= \
+    TZ=Asia/Shanghai
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tzdata \
+    nftables \
+    util-linux \
+    android-tools-adb \
+ && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+ && echo $TZ > /etc/timezone \
+ && apt-get clean && rm -rf /var/lib/apt/lists/* \
+ && mkdir -p /app/logs && chown -R 65534:65534 /app
+
+COPY --from=builder /app/bin/server /app/server
+COPY --from=builder /app/configs /app/configs
+
+EXPOSE 50055
+
+# 注意：端口映射功能使用nftables，需要root权限和宿主机PID命名空间
+# Docker运行时需要: --pid=host --privileged
+# USER 65534:65534  # 端口映射功能需要root权限，因此注释掉此行
+
+ENTRYPOINT ["sh", "-c", "/app/server -config ${RUNTIME_CONFIG_PATH:-/app/configs/online-hk.yaml}"]
+
