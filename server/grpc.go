@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/wumitech-com/mdcp_common/logger"
 	"github.com/wumitech-com/mdcp_proto/api/server_operator"
@@ -28,8 +29,11 @@ func RunGRPCServer(ctx context.Context, cfg *config.Config) error {
 
 	// 创建gRPC服务器选项
 	keepaliveParams := keepalive.ServerParameters{
-		Time:                int64(cfg.Server.GRPC.Keepalive.Time) * 1e9,
-		Timeout:             int64(cfg.Server.GRPC.Keepalive.Timeout) * 1e9,
+		Time:    time.Duration(cfg.Server.GRPC.Keepalive.Time) * time.Second,
+		Timeout: time.Duration(cfg.Server.GRPC.Keepalive.Timeout) * time.Second,
+	}
+
+	enforcementPolicy := keepalive.EnforcementPolicy{
 		PermitWithoutStream: cfg.Server.GRPC.Keepalive.PermitWithoutStream,
 	}
 
@@ -38,6 +42,7 @@ func RunGRPCServer(ctx context.Context, cfg *config.Config) error {
 			middleware.RecoveryInterceptor,
 			middleware.TraceInterceptor,
 		)),
+		grpc.KeepaliveEnforcementPolicy(enforcementPolicy),
 		grpc.MaxRecvMsgSize(cfg.Server.GRPC.MaxReceiveMessageSize),
 		grpc.MaxSendMsgSize(cfg.Server.GRPC.MaxSendMessageSize),
 		grpc.KeepaliveParams(keepaliveParams),
