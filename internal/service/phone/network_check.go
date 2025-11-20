@@ -28,7 +28,17 @@ func ExecutePing(ipAddress string, timeout, count int32) (bool, float64, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout+1)*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "ping", "-c", strconv.Itoa(int(count)), "-W", strconv.Itoa(int(timeout)), ipAddress)
+	// 由于容器使用独立网络命名空间，直接 ping 会失败，
+	// 这里通过 nsenter 进入宿主机网络命名空间执行 ping
+	pingArgs := []string{
+		"-t", "1", // 目标 PID 1，即宿主机
+		"-n", // 进入网络命名空间
+		"ping",
+		"-c", strconv.Itoa(int(count)),
+		"-W", strconv.Itoa(int(timeout)),
+		ipAddress,
+	}
+	cmd := exec.CommandContext(ctx, "nsenter", pingArgs...)
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
