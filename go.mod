@@ -9,6 +9,20 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-replace github.com/wumitech-com/mdcp_common => ../mdcp_common
-replace github.com/wumitech-com/mdcp_proto => ../mdcp_proto
+require (
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap v1.27.0 // indirect
+	golang.org/x/net v0.40.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	golang.org/x/text v0.25.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250512202823-5a2f75b736a9 // indirect
+	google.golang.org/protobuf v1.36.6 // indirect
+	gorm.io/gorm v1.30.0 // indirect
+)
 
+replace github.com/wumitech-com/mdcp_common => ../mdcp_common
+
+replace github.com/wumitech-com/mdcp_proto => ../mdcp_proto

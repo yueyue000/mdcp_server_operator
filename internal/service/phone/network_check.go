@@ -8,13 +8,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/wumitech-com/mdcp_common/logger"
 )
 
 const (
-	defaultPingTimeout = 3  // 默认Ping超时时间（秒）
-	defaultPingCount   = 3  // 默认Ping次数
+	defaultPingTimeout = 3 // 默认Ping超时时间（秒）
+	defaultPingCount   = 3 // 默认Ping次数
 )
 
 // ExecutePing 执行Ping命令检测网络连通性
@@ -77,4 +75,3 @@ func CompareMACAddress(mac1, mac2 string) bool {
 
 	return normalize(mac1) == normalize(mac2)
 }
-
