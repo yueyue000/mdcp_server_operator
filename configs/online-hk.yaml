@@ -1,7 +1,7 @@
 server:
   grpc:
     host: "0.0.0.0"
-    port: 50055
+    port: 50058
     max_receive_message_size: 4194304  # 4MB
     max_send_message_size: 4194304     # 4MB
     keepalive:

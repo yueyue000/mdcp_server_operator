@@ -45,8 +45,8 @@ fi
 CONTAINER_CONFIG_MOUNT="/app/configs/_runtime_testing.yaml"
 TEMP_RUNTIME_CONFIG="/tmp/mdcp_server_operator_runtime_testing.yaml"
 
-# 端口映射：gRPC 50054（测试环境）
-HOST_GRPC_PORT=${HOST_GRPC_PORT:-50054}
+# 端口映射：gRPC 50057（测试环境）
+HOST_GRPC_PORT=${HOST_GRPC_PORT:-50057}
 
 # ----------------------- 环境准备 -----------------------
 echo "📍 检测到的项目根目录: ${PROJECT_ROOT}"
@@ -112,7 +112,7 @@ docker run -d \
   --network online-hk_mdcp-network \
   --pid=host \
   --privileged \
-  -p "${HOST_GRPC_PORT}:50054" \
+  -p "${HOST_GRPC_PORT}:50057" \
   -v "${TEMP_RUNTIME_CONFIG}:${CONTAINER_CONFIG_MOUNT}:ro" \
   -v "${HOST_LOG_DIR}:/app/logs" \
   -e "TZ=Asia/Shanghai" \

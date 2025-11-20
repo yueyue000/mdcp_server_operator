@@ -61,7 +61,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /app/bin/server /app/server
 COPY --from=builder /app/configs /app/configs
 
-EXPOSE 50055
+EXPOSE 50058
 
 # 注意：端口映射功能使用nftables，需要root权限和宿主机PID命名空间
 # Docker运行时需要: --pid=host --privileged

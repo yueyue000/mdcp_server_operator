@@ -10,7 +10,7 @@ set -euo pipefail
 # 说明：
 # - 不进行 git clone/pull；仅根据 WORKSPACE 中的现有代码构建
 # - 使用 online-hk 配置：挂载到容器 /app/configs/_runtime_online_hk.yaml 并通过 RUNTIME_CONFIG_PATH 生效
-# - 暴露 gRPC 50055 端口
+# - 暴露 gRPC 50058 端口
 # - 自动处理容器内服务地址映射
 # - 使用本地 replace 方式构建（无需 GitHub Token）
 
@@ -55,8 +55,8 @@ fi
 CONTAINER_CONFIG_MOUNT="/app/configs/_runtime_online_hk.yaml"
 TEMP_RUNTIME_CONFIG="/tmp/mdcp_server_operator_runtime_online_hk.yaml"
 
-# 端口映射：gRPC 50055
-HOST_GRPC_PORT=${HOST_GRPC_PORT:-50055}
+# 端口映射：gRPC 50058
+HOST_GRPC_PORT=${HOST_GRPC_PORT:-50058}
 
 # ----------------------- 环境准备 -----------------------
 echo "📍 检测到的项目根目录: ${PROJECT_ROOT}"
@@ -111,7 +111,7 @@ docker run -d \
   --network online-hk_mdcp-network \
   --pid=host \
   --privileged \
-  -p "${HOST_GRPC_PORT}:50055" \
+  -p "${HOST_GRPC_PORT}:50058" \
   -v "${TEMP_RUNTIME_CONFIG}:${CONTAINER_CONFIG_MOUNT}:ro" \
   -v "${HOST_LOG_DIR}:/app/logs" \
   -e "TZ=Asia/Shanghai" \
