@@ -28,17 +28,14 @@ func ExecutePing(ipAddress string, timeout, count int32) (bool, float64, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout+1)*time.Second)
 	defer cancel()
 
-	// 由于容器使用独立网络命名空间，直接 ping 会失败，
-	// 这里通过 nsenter 进入宿主机网络命名空间执行 ping
+	// 直接使用ping命令（与mdcp_core_executor保持一致）
+	// 容器使用Docker网络（online-hk_mdcp-network），可以直接访问宿主机网络中的IP
 	pingArgs := []string{
-		"-t", "1", // 目标 PID 1，即宿主机
-		"-n", // 进入网络命名空间
-		"ping",
 		"-c", strconv.Itoa(int(count)),
 		"-W", strconv.Itoa(int(timeout)),
 		ipAddress,
 	}
-	cmd := exec.CommandContext(ctx, "nsenter", pingArgs...)
+	cmd := exec.CommandContext(ctx, "ping", pingArgs...)
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
